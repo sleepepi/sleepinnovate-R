@@ -61,7 +61,8 @@ files_to_process <- function(a)
     files$stay[j] <- ifelse(files$file_date[j] > as.Date(a),1,0)
   } 
   files<- files %>% filter(stay == 1)
-  TMB_to_be_processed <- data.frame(matrix(ncol = 11, nrow = 0))
+  if(dim(files)[1] > 0){
+    TMB_to_be_processed <- data.frame(matrix(ncol = 11, nrow = 0))
   for (k in 1:dim(files)[1]){
     if (file.info(as.character(paste(files$path[k],"/",files$file[k],sep = "")))$size > 0) {
     TMB_files <-  read.csv(file = as.character(paste(files$path[k],"/",files$file[k],sep = "")), header = T)
@@ -70,12 +71,19 @@ files_to_process <- function(a)
     }
   }
   TMB_dataset <<- TMB_to_be_processed
+  }
+  if(dim(files)[1] == 0){
+  TMB_dataset <<- data.frame(matrix(ncol = 11, nrow = 0))
+  } 
 }
 
 #Specify the date after which the TMB tests will be processed
-processed_dates <- as.vector(list.files(path = "./processed", pattern = NULL, all.files = FALSE, full.names = FALSE, recursive = FALSE))
-processed_dates <- as.Date(strsplit(processed_dates,"_")[[1]][4])
-last_p_date <- processed_dates[order(processed_dates,decreasing = T)]
+processed <- as.vector(list.files(path = "./processed", pattern = NULL, all.files = FALSE, full.names = FALSE, recursive = FALSE))
+for (i in 1:length(processed)){
+  date <- as.Date(substr(strsplit(processed[i],"_")[[1]][4],1,10),format = "%Y-%m-%d")
+  if(i == 1){last_p_date <- date} 
+  last_p_date <- max(date,last_p_date)
+}
 files_to_process(last_p_date)
 
 if(dim(TMB_dataset)[1] > 0){
